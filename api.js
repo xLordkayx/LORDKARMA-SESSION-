@@ -5,7 +5,6 @@ const router = express.Router();
 // Allow browser clients (you can restrict origins via CORS_ORIGIN env)
 router.use(cors({ origin: process.env.CORS_ORIGIN || '*', methods: ['GET','POST'], allowedHeaders: ['Content-Type','X-SESSION-SECRET'] }));
 
-const pairLimiter = rateLimit({ windowMs: 60_000, max: 12, standardHeaders: true, legacyHeaders: false });
 const fs = require('fs');
 const path = require('path');
 const archiver = require('archiver');
