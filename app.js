@@ -1,32 +1,37 @@
+/* LORDKARMA Session Generator - Express App (Render/Vercel) */
 
-/* LORDKARMA Session Generator - Express App (shared by Render/Vercel) */
+"use strict";
 
-const express = require('express');
-const bodyParser = require("body-parser");
-const path = require('path');
+const express = require("express");
+const path = require("path");
+
+require("events").EventEmitter.defaultMaxListeners = 500;
 
 const app = express();
-const __path = process.cwd();
+const ROOT = process.cwd();
 
-require('events').EventEmitter.defaultMaxListeners = 500;
+// Native body parsing (faster, cleaner than body-parser)
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// API
+const apiRouter = require("./api");
+app.use("/api", apiRouter);
 
-const api = require('./api');
-app.use('/api', api);
+// Pages
+app.get("/pair", (req, res) => res.sendFile(path.join(ROOT, "pair.html")));
+app.get("/", (req, res) => res.sendFile(path.join(ROOT, "index.html")));
 
-app.get('/pair', (req, res) => res.sendFile(path.join(__path, 'pair.html')));
-app.get('/', (req, res) => res.sendFile(path.join(__path, 'index.html')));
-
+// Optional QR route
 try {
-  const qr = require('./qr');
-  app.use('/qr', qr);
+  const qr = require("./qr");
+  app.use("/qr", qr);
 } catch (_) {}
 
-app.get('/code', (req, res) => {
-  req.url = '/code' + (req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '');
-  return api(req, res, () => {});
+// Legacy compatibility: /code -> /api/code
+app.get("/code", (req, res) => {
+  const qs = req.url.includes("?") ? req.url.slice(req.url.indexOf("?")) : "";
+  return res.redirect(302, "/api/code" + qs);
 });
 
 module.exports = app;
