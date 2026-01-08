@@ -9,8 +9,20 @@ const pairLimiter = rateLimit({ windowMs: 60_000, max: 12, standardHeaders: true
 const fs = require('fs');
 const path = require('path');
 const archiver = require('archiver');
-const rateLimit = require('express-rate-limit');
-const cors = require('cors');
+router.use(
+  cors({
+    origin: process.env.CORS_ORIGIN || "*",
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "X-SESSION-SECRET"],
+  })
+);
+
+const pairLimiter = rateLimit({
+  windowMs: 60_000,
+  max: 12,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 const { getCollection } = require('./db');
 
 const pino = require("pino");
