@@ -14,7 +14,7 @@
     "archiver": "^6.0.2",
     "body-parser": "^1.20.3",
     "express": "^4.19.2",
-    "maher-zubair-baileys": "^6.7.9",
+    "maher-zubair-baileys": "6.6.5",
     "pastebin-js": "^1.0.6",
     "pino": "^9.3.2",
     "qrcode": "^1.5.4",
@@ -22,4 +22,4 @@
     "cors": "^2.8.5",
     "express-rate-limit": "^7.4.0"
   }
-}
+} 
