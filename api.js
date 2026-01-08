@@ -217,40 +217,57 @@ async function startPairing(num) {
   PAIR_SOCKETS.set(session_id, sock);
   sock.ev.on("creds.update", saveCreds);
 
-  sock.ev.on("connection.update", async (u) => {
-    try {
-      const connection = u?.connection;
-
-      if (connection === "open") {
-        const prev = readStatus(session_id) || {};
-        writeStatus(session_id, {
-          ...prev,
-          status: "ready",
-          created_at: prev.created_at || created_at,
-          expires_at: prev.expires_at || expires_at,
-        });
-
-        await delay(1500);
-        try {
-          sock.ws?.close();
-        } catch (_) {}
-        try {
-          sock.end?.();
-        } catch (_) {}
-        PAIR_SOCKETS.delete(session_id);
-      }
-
-      if (connection === "close") {
-        PAIR_SOCKETS.delete(session_id);
-      }
-    } catch (e) {
-      console.log("[connection.update error]", e?.message || e);
-    }
-  });
+  
 
   // Request pairing code
   await delay(800);
-  const code = await sock.requestPairingCode(num);
+  const code = sock.ev.on('connection.update', async (u) => {
+  try {
+    const { connection } = u || {};
+
+    if (connection === 'open') {
+      // ✅ merge status (do not overwrite phone/code)
+      const st = readStatus(session_id) || {};
+      writeStatus(session_id, { ...st, status: 'ready' });
+
+      // ✅ send WhatsApp welcome message to the same number that linked
+      const jid = `${num}@s.whatsapp.net`;
+
+      const msg =
+`🖤✨ LORDKARMA SESSION LINKED ✅
+
+You have successfully linked your bot session.
+
+📌 Session ID:
+${session_id}
+
+⚠ Keep this Session ID private.
+— LORDKARMA`;
+
+      // Give WhatsApp a moment to stabilize before sending
+      await delay(2500);
+
+      try {
+        await sock.sendMessage(jid, { text: msg });
+      } catch (e) {
+        console.log('[welcome send failed]', e?.message || e);
+      }
+
+      // ✅ keep socket alive longer so WhatsApp doesn't fail linking
+      await delay(12000);
+
+      try { sock.ws?.close(); } catch {}
+      try { sock.end?.(); } catch {}
+      PAIR_SOCKETS.delete(session_id);
+    }
+
+    if (connection === 'close') {
+      PAIR_SOCKETS.delete(session_id);
+    }
+  } catch (e) {
+    console.log('[connection.update error]', e?.message || e);
+  }
+});await sock.requestPairingCode(num);
 
   const prev = readStatus(session_id) || {};
   writeStatus(session_id, { ...prev, code });
