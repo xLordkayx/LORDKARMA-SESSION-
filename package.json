@@ -1,0 +1,25 @@
+{
+  "name": "lordkarma-session-generator",
+  "version": "1.0.0",
+  "description": "LORDKARMA WhatsApp pairing code + session id generator (Render/Vercel)",
+  "main": "Maher-Zubair.js",
+  "scripts": {
+    "start": "node Maher-Zubair.js",
+    "dev": "node Maher-Zubair.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "archiver": "^6.0.2",
+    "body-parser": "^1.20.3",
+    "express": "^4.19.2",
+    "maher-zubair-baileys": "^6.7.9",
+    "pastebin-js": "^1.0.6",
+    "pino": "^9.3.2",
+    "qrcode": "^1.5.4",
+    "mongodb": "^6.3.0",
+    "cors": "^2.8.5",
+    "express-rate-limit": "^7.4.0"
+  }
+}

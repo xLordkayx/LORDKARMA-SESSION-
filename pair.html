@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>LORDKARMA • Pair Code</title>
+  <link rel="shortcut icon" type="x-icon" href="https://telegra.ph/file/2385fc4b9df6b9fdd96fc.mp4">
+  <style>
+    :root{
+      --bg:#070A10;
+      --panel:rgba(12,16,26,.72);
+      --panel2:rgba(12,16,26,.55);
+      --text:#EAF0FF;
+      --muted:#A8B3CF;
+      --accent:#7C5CFF;
+      --good:#2EE59D;
+      --bad:#FF5C7A;
+      --line:rgba(255,255,255,.10);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 800px at 15% 20%, rgba(124,92,255,.18), transparent 60%),
+        radial-gradient(900px 700px at 85% 80%, rgba(46,229,157,.10), transparent 55%),
+        linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.75)),
+        url("https://i.imgur.com/HQ8CENR.jpeg");
+      background-size: cover;
+      background-position:center;
+      background-repeat:no-repeat;
+    }
+    .wrap{
+      width:min(920px, 92vw);
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap:18px;
+    }
+    @media (max-width: 900px){
+      .wrap{grid-template-columns:1fr}
+    }
+    .card{
+      border:1px solid var(--line);
+      background: linear-gradient(180deg, var(--panel), var(--panel2));
+      backdrop-filter: blur(10px);
+      border-radius:18px;
+      padding:18px;
+      box-shadow: 0 18px 60px rgba(0,0,0,.45);
+    }
+    .brand{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding-bottom:10px; border-bottom:1px solid var(--line);
+      margin-bottom:12px;
+    }
+    .brand h1{margin:0; font-size:18px; letter-spacing:.6px}
+    .brand small{color:var(--muted)}
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 12px; border-radius:999px; border:1px solid var(--line);
+      background: rgba(0,0,0,.25);
+      color:var(--muted);
+      font-size:12px;
+      user-select:none;
+    }
+    label{display:block; color:var(--muted); font-size:12px; margin:10px 0 6px}
+    input{
+      width:100%; padding:12px 12px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      outline:none;
+      background: rgba(0,0,0,.25);
+      color:var(--text);
+      font-size:14px;
+    }
+    input::placeholder{color:rgba(168,179,207,.65)}
+    button{
+      width:100%;
+      margin-top:12px;
+      padding:12px 14px;
+      border-radius:12px;
+      border:1px solid rgba(124,92,255,.35);
+      background: linear-gradient(180deg, rgba(124,92,255,.95), rgba(124,92,255,.65));
+      color:white;
+      font-weight:700;
+      cursor:pointer;
+      transition: transform .08s ease, filter .15s ease;
+    }
+    button:active{transform: scale(.98)}
+    .mutebtn{
+      background: rgba(0,0,0,.25);
+      border:1px solid var(--line);
+      color:var(--text);
+      font-weight:600;
+    }
+    .row{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px}
+    .row button{flex:1; min-width: 180px}
+    .kv{
+      display:flex; justify-content:space-between; gap:12px;
+      padding:10px 12px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background: rgba(0,0,0,.18);
+      margin-top:10px;
+      align-items:center;
+    }
+    .kv b{font-size:13px}
+    .kv code{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      color: var(--text);
+      font-size:12px;
+      word-break: break-all;
+    }
+    .status{font-size:12px; color:var(--muted); margin-top:10px; line-height:1.55}
+    .ok{color:var(--good); font-weight:700}
+    .bad{color:var(--bad); font-weight:700}
+    a{color: var(--text)}
+    .steps li{margin:8px 0; color:var(--muted)}
+    .steps b{color:var(--text)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="brand">
+        <div>
+          <h1>🖤 LORDKARMA • Pair Code Portal</h1>
+          <small>Dark. Chill. Fast pairing.</small>
+        </div>
+        <span class="pill">🕯️ no QR • pairing code</span>
+      </div>
+
+      <label>Access Password</label>
+      <input id="secret" type="password" placeholder="portal password" />
+
+      <label>WhatsApp Number (with country code)</label>
+      <input id="number" placeholder="e.g. 2348012345678" inputmode="numeric" />
+
+      <button id="submit">Generate Pair Code</button>
+
+      <div id="out" style="display:none">
+        <div class="kv">
+          <div>
+            <b>PAIR CODE</b><br/>
+            <code id="pairCode">...</code>
+          </div>
+          <button class="mutebtn" onclick="copyText('pairCode')">Copy</button>
+        </div>
+
+        <div class="kv">
+          <div>
+            <b>SESSION ID</b><br/>
+            <code id="sessionId">...</code>
+          </div>
+          <button class="mutebtn" onclick="copyText('sessionId')">Copy</button>
+        </div>
+
+        <div class="status" id="status">
+          Status: <span class="bad">pending</span> • Link the code in WhatsApp quickly.
+        </div>
+
+        <div class="row">
+          <button class="mutebtn" onclick="location.href='/'">Back Home</button>
+          <button class="mutebtn" onclick="location.href='/qr'">QR Page (optional)</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="brand">
+        <div>
+          <h1>⚙️ How it works</h1>
+          <small>Use the Session ID in your bot after deploy.</small>
+        </div>
+      </div>
+
+      <ol class="steps">
+        <li>Enter your number and generate the <b>Pair Code</b>.</li>
+        <li>On WhatsApp: <b>Linked devices → Link a device → Link with phone number</b>, then enter the code.</li>
+        <li>Wait until status becomes <b class="ok">ready</b> on this page.</li>
+        <li>Copy the <b>SESSION ID</b> and set it in your bot panel env: <b>SESSION_ID</b>.</li>
+        <li>Bot will fetch the session from this site: <code>SESSION_BASE_URL</code> (optional).</li>
+      </ol>
+
+      <div class="status">
+        ⚠️ If you deploy this portal on <b>Vercel</b>, sessions may reset (serverless filesystem). For best uptime, deploy on <b>Render</b>.
+      </div>
+
+      <div class="kv">
+        <div>
+          <b>Bot env examples</b><br/>
+          <code>SESSION_ID=LK-...<br/>SESSION_BASE_URL=https://your-site.com</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const out = document.getElementById('out');
+    const statusEl = document.getElementById('status');
+    const pairCodeEl = document.getElementById('pairCode');
+    const sessionIdEl = document.getElementById('sessionId');
+    const numberEl = document.getElementById('number');
+    const secretEl = document.getElementById('secret');
+    const btn = document.getElementById('submit');
+
+    function copyText(id){
+      const el = document.getElementById(id);
+      const t = el.innerText.trim();
+      navigator.clipboard.writeText(t);
+    }
+
+    let pollTimer = null;
+
+    async function pollStatus(sessionId){
+      if(pollTimer) clearInterval(pollTimer);
+      pollTimer = setInterval(async () => {
+        try {
+          const r = await fetch(`/api/status/${encodeURIComponent(sessionId)}`);
+          const j = await r.json();
+          if(!j.ok){
+            statusEl.innerHTML = `Status: <span class="bad">missing</span>`;
+            return;
+          }
+          const st = j.status || 'pending';
+          const color = (st === 'ready') ? 'ok' : (st === 'expired' ? 'bad' : 'bad');
+          statusEl.innerHTML = `Status: <span class="${color}">${st}</span>` +
+            (j.expires_at ? ` • Expires: ${new Date(j.expires_at).toLocaleString()}` : '');
+          if(st === 'ready'){
+            clearInterval(pollTimer);
+            pollTimer = null;
+          }
+        } catch(e){}
+      }, 2000);
+    }
+
+    btn.addEventListener('click', async () => {
+      const number = (numberEl.value || '').trim();
+      if(!number){ alert('Enter your WhatsApp number'); return; }
+
+      btn.disabled = true;
+      btn.innerText = 'Generating...';
+
+      try{
+        const secret = (secretEl.value || '').trim();
+        const r = await fetch('/api/pair', {
+          method:'POST',
+          headers:{'Content-Type':'application/json','X-SESSION-SECRET': secret},
+          body: JSON.stringify({ number, secret })
+        });
+        const j = await r.json();
+        if(!j.ok){
+          alert(j.error || 'Failed');
+          return;
+        }
+
+        out.style.display = 'block';
+        pairCodeEl.innerText = j.code;
+        sessionIdEl.innerText = j.session_id;
+
+        statusEl.innerHTML = `Status: <span class="bad">pending</span> • Expires: ${new Date(j.expires_at).toLocaleString()}`;
+        pollStatus(j.session_id);
+      }catch(e){
+        alert('Pairing failed. Try again.');
+      }finally{
+        btn.disabled = false;
+        btn.innerText = 'Generate Pair Code';
+      }
+    });
+  </script>
+</body>
+</html>
