@@ -1,42 +1,32 @@
-// MongoDB helper (optional). If MONGODB_URI is not set, DB features are disabled.
+"use strict";
 
-const { MongoClient } = require('mongodb');
+const { MongoClient } = require("mongodb");
 
 let _client = null;
 let _col = null;
-let _indexesReady = false;
 
+/**
+ * Returns a MongoDB collection when MONGODB_URI is provided.
+ * If not configured, returns null (the app will fallback to filesystem).
+ */
 async function getCollection() {
-  const uri = process.env.MONGODB_URI;
-  if (!uri) return null;
+  const uri = process.env.MONGODB_URI || process.env.MONGO_URI || "";
+  const dbName = process.env.MONGODB_DB || process.env.MONGO_DB || "lordkarma";
+  const colName = process.env.MONGODB_COLLECTION || "sessions";
 
+  if (!uri) return null;
   if (_col) return _col;
 
-  _client = _client || new MongoClient(uri, {
-    maxPoolSize: 10,
-    serverSelectionTimeoutMS: 7000,
-  });
-
-  if (!_client.topology?.isConnected?.()) {
-    await _client.connect();
-  }
-
-  const dbName = process.env.MONGODB_DB || process.env.MONGODB_DATABASE || 'lordkarma';
-  const colName = process.env.MONGODB_COLLECTION || 'sessions';
-
+  _client = _client || new MongoClient(uri, { maxPoolSize: 5 });
+  await _client.connect();
   const db = _client.db(dbName);
   _col = db.collection(colName);
 
-  if (!_indexesReady) {
-    try {
-      await _col.createIndex({ session_id: 1 }, { unique: true });
-      // TTL index: documents will be removed when expires_at is reached.
-      await _col.createIndex({ expires_at: 1 }, { expireAfterSeconds: 0 });
-    } catch (e) {
-      // ignore if already exists
-    }
-    _indexesReady = true;
-  }
+  // helpful index
+  try {
+    await _col.createIndex({ session_id: 1 }, { unique: true });
+    await _col.createIndex({ expires_at: 1 });
+  } catch (_) {}
 
   return _col;
 }
