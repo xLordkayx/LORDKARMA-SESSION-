@@ -146,10 +146,16 @@ function readStatus(sessionId) {
     return null;
   }
 }
+function isRegisteredSession(sessionId) {
+  const credsPath = path.join(SESS_DIR, sessionId, "creds.json");
+  if (!fs.existsSync(credsPath)) return false;
 
-function hasCreds(sessionId) {
-  const dir = path.join(SESS_DIR, sessionId);
-  return fs.existsSync(path.join(dir, "creds.json"));
+  try {
+    const creds = JSON.parse(fs.readFileSync(credsPath, "utf-8"));
+    return !!creds.registered; // ✅ only true after successful link
+  } catch {
+    return false;
+  }
 }
 
 /** =========================
