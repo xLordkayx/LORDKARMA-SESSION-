@@ -261,6 +261,9 @@ ${session_id}
           } catch (e) {
             console.log("[welcome send failed]", e?.message || e);
           }
+          if (connection === "open" && isRegisteredSession(session_id)) {
+  // mark ready + send welcome
+          }
 
           // Keep alive briefly to avoid link failure
           await delay(8000);
@@ -272,7 +275,7 @@ ${session_id}
       }
 
       if (connection === "close") {
-        PAIR_SOCKETS.delete(session_id);
+        PAIR_SOCKETS.delete(session_id)
       }
     } catch (e) {
       console.log("[connection.update error]", e?.message || e);
@@ -362,10 +365,10 @@ router.get("/status/:id", async (req, res) => {
       };
     }
 
-    if (st.status !== "ready" && hasCreds(id)) {
-      writeStatus(id, { ...st, status: "ready" });
-      return res.json({ ok: true, ...readStatus(id) });
-    }
+    if (st.status !== "ready" && isRegisteredSession(id)) {
+  writeStatus(id, { ...st, status: "ready" });
+  return res.json({ ok: true, ...readStatus(id) });
+                                                     }
 
     return res.json({ ok: true, ...st });
   } catch (e) {
@@ -386,8 +389,9 @@ router.get("/session/:id", async (req, res) => {
     if (!fs.existsSync(sessPath))
       return res.status(404).json({ ok: false, error: "Session not found" });
 
-    if (!hasCreds(id))
-      return res.status(409).json({ ok: false, error: "Session not ready yet" });
+    if (!isRegisteredSession(id)) {
+  return res.status(409).json({ ok:false, error:"Session not ready yet" });
+                           }
 
     const zipBuf = await zipFolderToBuffer(sessPath);
     return res.json({
