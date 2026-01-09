@@ -83,25 +83,7 @@ function requireSecret(req, res, next) {
  * DB helpers
  * ========================= */
 // IMPORTANT: avoid created_at conflict by never putting created_at in $set
-async function dbUpsert(session_id, patch) {
-  try {
-    const col = await getCollection();
-    if (!col) return;
 
-    const { created_at, ...safePatch } = patch || {};
-
-    await col.updateOne(
-      { session_id },
-      {
-        $set: { ...safePatch, session_id, updated_at: Date.now() },
-        $setOnInsert: { created_at: created_at || Date.now() },
-      },
-      { upsert: true }
-    );
-  } catch (e) {
-    console.warn("[dbUpsert]", e?.message || e);
-  }
-}
 
 async function dbGet(session_id) {
   try {
@@ -121,7 +103,25 @@ function makeSessionId() {
 }
 
 function statusPath(sessionId) {
-  return path.join(ACTIVE_DIR, `${sessionId}.json`);
+  return path.joiasync function dbUpsert(session_id, patch) {
+  try {
+    const col = await getCollection();
+    if (!col) return;
+
+    const { created_at, ...rest } = patch || {};
+
+    await col.updateOne(
+      { session_id },
+      {
+        $set: { ...rest, session_id, updated_at: Date.now() },
+        $setOnInsert: { created_at: created_at || Date.now() },
+      },
+      { upsert: true }
+    );
+  } catch (e) {
+    console.warn("[dbUpsert]", e?.message || e);
+  }
+  }n(ACTIVE_DIR, `${sessionId}.json`);
 }
 
 function writeStatus(sessionId, data) {
