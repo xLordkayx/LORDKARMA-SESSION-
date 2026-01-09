@@ -204,8 +204,66 @@ async function startPairing(num) {
     status: "pending",
     created_at,
     expires_at,
-    phone: num,
+    phone: num
   });
+
+  const { state, saveCreds } = await useMultiFileAuthState(sessPath);
+
+  const sock = makeWASocket({
+    logger: pino({ level: "silent" }),
+    printQRInTerminal: false,
+    browser: Browsers.ubuntu("LORDKARMA Portal"),
+    auth: {
+      creds: state.creds,
+      keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" }))
+    }
+  });
+
+  PAIR_SOCKETS.set(session_id, sock);
+  sock.ev.on("creds.update", saveCreds);
+
+  // 🔒 DO NOT TOUCH SOCKET UNTIL REGISTERED
+  sock.ev.on("connection.update", async (u) => {
+    if (u.connection === "open") {
+      const credsPath = path.join(sessPath, "creds.json");
+      const creds = JSON.parse(fs.readFileSync(credsPath, "utf8"));
+
+      if (creds?.registered) {
+        writeStatus(session_id, {
+          status: "ready",
+          created_at,
+          expires_at,
+          phone: num
+        });
+
+        // send welcome message
+        const jid = `${num}@s.whatsapp.net`;
+        await delay(3000);
+        await sock.sendMessage(jid, {
+          text: `🖤 LORDKARMA SESSION LINKED\n\nSession ID:\n${session_id}\n\nKeep this safe.`
+        });
+
+        await delay(15000);
+        sock.end();
+        PAIR_SOCKETS.delete(session_id);
+      }
+    }
+  });
+
+  // WAIT for WhatsApp to give us the pairing code
+  await delay(1200);
+  
+
+  writeStatus(session_id, {
+    status: "pending",
+    created_at,
+    expires_at,
+    phone: num,
+    code
+  });
+
+  return { session_id, code, expires_at };
+}
 
   const { state, saveCreds } = await useMultiFileAuthState(sessPath);
 
