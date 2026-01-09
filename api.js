@@ -189,25 +189,26 @@ function safeEnd(sock) {
 }
 
 /**
- * Wait until the WS is OPEN enough to request a pairing code.
- * This avoids "Precondition Required" 428 errors.
+ * Request a pairing code with a small retry loop.
+ * IMPORTANT: For pairing-code login, the socket usually does NOT reach "open"
+ * until AFTER the user links the device. So we must NOT wait for "open" here.
  */
-async function waitForSocketOpen(sock, timeoutMs = 15000) {
-  return await new Promise((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error("Socket open timeout")), timeoutMs);
-    const off = sock.ev.on("connection.update", (u) => {
-      if (u?.connection === "open") {
-        clearTimeout(t);
-        try { off(); } catch (_) {}
-        resolve(true);
-      }
-      if (u?.connection === "close") {
-        clearTimeout(t);
-        try { off(); } catch (_) {}
-        reject(new Error("Socket closed before open"));
-      }
-    });
-  });
+async function requestPairCode(sock, num, tries = 6) {
+  let lastErr = null;
+  for (let i = 0; i < tries; i++) {
+    try {
+      // Some environments need a short warm-up before requesting.
+      await delay(400);
+      const code = await sock.requestPairingCode(num);
+      if (code) return code;
+      lastErr = new Error("Empty pairing code");
+    } catch (e) {
+      lastErr = e;
+      // backoff a bit
+      await delay(900 + i * 250);
+    }
+  }
+  throw lastErr || new Error("Failed to request pairing code");
 }
 
 /* =========================
@@ -307,11 +308,11 @@ Deploy the bot and set SESSION_ID=${session_id}
     }
   });
 
-  // Wait for socket open before requesting code (fixes many "couldn't link device" issues)
-  await waitForSocketOpen(sock);
-
-  // Request pairing code
-  const code = await sock.requestPairingCode(num);
+  // IMPORTANT:
+  // For *pairing code* auth, Baileys often won't reach connection === "open" until AFTER
+  // the user links the device. So waiting for "open" here can deadlock.
+  // Instead, request the pairing code with a small retry loop.
+  const code = await requestPairCode(sock, num);
 
   const st = readStatus(session_id) || {};
   writeStatus(session_id, { ...st, code });
