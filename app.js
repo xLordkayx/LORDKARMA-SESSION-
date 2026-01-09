@@ -9,9 +9,12 @@ require("events").EventEmitter.defaultMaxListeners = 500;
 
 const app = express();
 app.set("trust proxy", 1);   // ← ADD THIS LINE
-const ROOT = process.cwd();
+const ROOT = process.cwd();;
 
-// Native body parsing (faster, cleaner than body-parser)
+// ✅ REQUIRED on Render (fixes express-rate-limit X-Forwarded-For error)
+app.set("trust proxy", 1);
+
+// Native body parsing
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
