@@ -7,6 +7,7 @@ const archiver = require("archiver");
 const rateLimit = require("express-rate-limit");
 const cors = require("cors");
 const pino = require("pino");
+
 const { getCollection } = require("./db");
 const { makeid } = require("./id");
 
@@ -20,10 +21,9 @@ const {
 
 const router = express.Router();
 
-/** =========================
- *  Middleware
- *  ========================= */
-
+/* =========================
+ * Middleware
+ * ========================= */
 router.use(
   cors({
     origin: process.env.CORS_ORIGIN || "*",
@@ -39,17 +39,16 @@ const pairLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-/** =========================
- *  Storage paths
- *  ========================= */
-
+/* =========================
+ * Storage
+ * ========================= */
 const SESS_DIR = path.join(process.cwd(), "sessions");
 const ACTIVE_DIR = path.join(process.cwd(), "active");
 
 function ensureDir(p) {
   try {
     fs.mkdirSync(p, { recursive: true });
-  } catch (_) {}
+  } catch {}
 }
 
 function normalizeNumber(raw) {
@@ -59,13 +58,12 @@ function normalizeNumber(raw) {
   return num;
 }
 
-/** =========================
- *  Secret gate
- *  ========================= */
-
+/* =========================
+ * Secret Gate
+ * ========================= */
 function checkSecret(req) {
   const secret = process.env.SESSION_SECRET;
-  if (!secret) return true; // gate disabled
+  if (!secret) return true;
 
   const provided = (
     req.headers["x-session-secret"] ||
@@ -85,10 +83,9 @@ function requireSecret(req, res, next) {
   return res.status(401).json({ ok: false, error: "Unauthorized (bad secret)" });
 }
 
-/** =========================
- *  DB helpers (optional)
- *  ========================= */
-
+/* =========================
+ * DB helpers (optional)
+ * ========================= */
 async function dbUpsert(session_id, patch) {
   try {
     const col = await getCollection();
@@ -112,18 +109,16 @@ async function dbGet(session_id) {
     const col = await getCollection();
     if (!col) return null;
     return await col.findOne({ session_id });
-  } catch (_) {
+  } catch {
     return null;
   }
 }
 
-/** =========================
- *  Status file helpers
- *  ========================= */
-
+/* =========================
+ * Status helpers
+ * ========================= */
 function makeSessionId() {
-  const ts = Date.now();
-  return `LK-${ts}-${makeid(4)}`;
+  return `LK-${Date.now()}-${makeid(4)}`;
 }
 
 function statusPath(sessionId) {
@@ -134,7 +129,7 @@ function writeStatus(sessionId, data) {
   ensureDir(ACTIVE_DIR);
   try {
     fs.writeFileSync(statusPath(sessionId), JSON.stringify(data, null, 2));
-  } catch (_) {}
+  } catch {}
 
   dbUpsert(sessionId, data).catch(() => {});
 }
@@ -142,26 +137,25 @@ function writeStatus(sessionId, data) {
 function readStatus(sessionId) {
   try {
     return JSON.parse(fs.readFileSync(statusPath(sessionId), "utf-8"));
-  } catch (_) {
+  } catch {
     return null;
   }
 }
+
 function isRegisteredSession(sessionId) {
   const credsPath = path.join(SESS_DIR, sessionId, "creds.json");
   if (!fs.existsSync(credsPath)) return false;
-
   try {
     const creds = JSON.parse(fs.readFileSync(credsPath, "utf-8"));
-    return !!creds.registered; // ✅ only true after successful link
+    return !!creds?.registered;
   } catch {
     return false;
   }
 }
 
-/** =========================
- *  Zip helper
- *  ========================= */
-
+/* =========================
+ * Zip helper
+ * ========================= */
 async function zipFolderToBuffer(folderPath) {
   return await new Promise((resolve, reject) => {
     const archive = archiver("zip", { zlib: { level: 9 } });
@@ -179,16 +173,14 @@ async function zipFolderToBuffer(folderPath) {
   });
 }
 
-/** =========================
- *  Live pairing sockets map
- *  ========================= */
-
+/* =========================
+ * Live sockets
+ * ========================= */
 const PAIR_SOCKETS = new Map();
 
-/** =========================
- *  Core pairing
- *  ========================= */
-
+/* =========================
+ * Core pairing (Patron style)
+ * ========================= */
 async function startPairing(num) {
   ensureDir(SESS_DIR);
 
@@ -200,70 +192,7 @@ async function startPairing(num) {
   const ttlMs = 10 * 60 * 1000;
   const expires_at = created_at + ttlMs;
 
-  writeStatus(session_id, {
-    status: "pending",
-    created_at,
-    expires_at,
-    phone: num
-  });
-
-  const { state, saveCreds } = await useMultiFileAuthState(sessPath);
-
-  const sock = makeWASocket({
-    logger: pino({ level: "silent" }),
-    printQRInTerminal: false,
-    browser: Browsers.ubuntu("LORDKARMA Portal"),
-    auth: {
-      creds: state.creds,
-      keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" }))
-    }
-  });
-
-  PAIR_SOCKETS.set(session_id, sock);
-  sock.ev.on("creds.update", saveCreds);
-
-  // 🔒 DO NOT TOUCH SOCKET UNTIL REGISTERED
-  sock.ev.on("connection.update", async (u) => {
-    if (u.connection === "open") {
-      const credsPath = path.join(sessPath, "creds.json");
-      const creds = JSON.parse(fs.readFileSync(credsPath, "utf8"));
-
-      if (creds?.registered) {
-        writeStatus(session_id, {
-          status: "ready",
-          created_at,
-          expires_at,
-          phone: num
-        });
-
-        // send welcome message
-        const jid = `${num}@s.whatsapp.net`;
-        await delay(3000);
-        await sock.sendMessage(jid, {
-          text: `🖤 LORDKARMA SESSION LINKED\n\nSession ID:\n${session_id}\n\nKeep this safe.`
-        });
-
-        await delay(15000);
-        sock.end();
-        PAIR_SOCKETS.delete(session_id);
-      }
-    }
-  });
-
-  // WAIT for WhatsApp to give us the pairing code
-  await delay(1200);
-  
-
-  writeStatus(session_id, {
-    status: "pending",
-    created_at,
-    expires_at,
-    phone: num,
-    code
-  });
-
-  return { session_id, code, expires_at };
-}
+  writeStatus(session_id, { status: "pending", created_at, expires_at, phone: num });
 
   const { state, saveCreds } = await useMultiFileAuthState(sessPath);
 
@@ -280,27 +209,18 @@ async function startPairing(num) {
   PAIR_SOCKETS.set(session_id, sock);
   sock.ev.on("creds.update", saveCreds);
 
-  // Listen for successful registration before marking ready
-  let readyDone = false;
-
+  // ✅ do NOT mark ready until registered
   sock.ev.on("connection.update", async (u) => {
     try {
-      const { connection } = u || {};
+      if (u?.connection === "open") {
+        // Wait a bit so creds.json is fully written
+        await delay(1000);
 
-      // Only mark ready when creds are actually registered
-      if (!readyDone && connection === "open") {
-        const registered =
-          sock?.authState?.creds?.registered ||
-          state?.creds?.registered ||
-          false;
-
-        if (registered && hasCreds(session_id)) {
-          readyDone = true;
-
+        if (isRegisteredSession(session_id)) {
           const st = readStatus(session_id) || {};
           writeStatus(session_id, { ...st, status: "ready" });
 
-          // Send WhatsApp welcome ONLY after confirmed ready
+          // Send WhatsApp welcome message AFTER successful link
           const jid = `${num}@s.whatsapp.net`;
           const msg =
 `🖤✨ LORDKARMA SESSION LINKED ✅
@@ -319,47 +239,40 @@ ${session_id}
           } catch (e) {
             console.log("[welcome send failed]", e?.message || e);
           }
-          if (connection === "open" && isRegisteredSession(session_id)) {
-  // mark ready + send welcome
-          }
 
-          // Keep alive briefly to avoid link failure
+          // keep alive shortly to avoid link failure
           await delay(8000);
 
-          try { sock.ws?.close(); } catch {}
-          try { sock.end?.(); } catch {}
+          try { sock.end(); } catch {}
           PAIR_SOCKETS.delete(session_id);
         }
       }
 
-      if (connection === "close") {
-        PAIR_SOCKETS.delete(session_id)
+      if (u?.connection === "close") {
+        PAIR_SOCKETS.delete(session_id);
       }
     } catch (e) {
       console.log("[connection.update error]", e?.message || e);
     }
   });
 
-  // Request pairing code (this is the actual pairing code)
+  // ✅ pairing code must be requested AFTER socket is created
   await delay(800);
   const code = await sock.requestPairingCode(num);
 
-  const prev = readStatus(session_id) || {};
-  writeStatus(session_id, { ...prev, code });
+  const st = readStatus(session_id) || {};
+  writeStatus(session_id, { ...st, code });
 
-  // Auto cleanup after TTL
+  // TTL cleanup
   setTimeout(() => {
     try {
-      const st = readStatus(session_id);
-      if (st && st.status !== "ready") {
-        writeStatus(session_id, { ...st, status: "expired" });
-      }
-    } catch (_) {}
+      const st2 = readStatus(session_id);
+      if (st2 && st2.status !== "ready") writeStatus(session_id, { ...st2, status: "expired" });
+    } catch {}
 
     const s = PAIR_SOCKETS.get(session_id);
     if (s) {
-      try { s.ws?.close(); } catch (_) {}
-      try { s.end?.(); } catch (_) {}
+      try { s.end(); } catch {}
       PAIR_SOCKETS.delete(session_id);
     }
   }, ttlMs).unref?.();
@@ -367,18 +280,15 @@ ${session_id}
   return { session_id, code, expires_at };
 }
 
-/** =========================
- *  Routes
- *  ========================= */
+/* =========================
+ * Routes
+ * ========================= */
 
 router.post("/pair", pairLimiter, requireSecret, async (req, res) => {
   try {
     const raw = req.body?.number || req.body?.phone || req.body?.num;
     const num = normalizeNumber(raw);
-    if (!num)
-      return res
-        .status(400)
-        .json({ ok: false, error: "Invalid phone number" });
+    if (!num) return res.status(400).json({ ok: false, error: "Invalid phone number" });
 
     const out = await startPairing(num);
     return res.json({ ok: true, ...out });
@@ -394,11 +304,7 @@ router.get("/code", async (req, res) => {
     if (!num) return res.status(400).json({ code: "Invalid number" });
 
     const out = await startPairing(num);
-    return res.json({
-      code: out.code,
-      session_id: out.session_id,
-      expires_at: out.expires_at,
-    });
+    return res.json({ code: out.code, session_id: out.session_id, expires_at: out.expires_at });
   } catch (e) {
     console.error("[api/code]", e);
     return res.status(500).json({ code: "Service Unavailable" });
@@ -408,28 +314,22 @@ router.get("/code", async (req, res) => {
 router.get("/status/:id", async (req, res) => {
   try {
     const id = req.params.id;
-    let st = readStatus(id);
 
+    let st = readStatus(id);
     if (!st) {
       const d = await dbGet(id);
       if (!d) return res.status(404).json({ ok: false, status: "missing" });
-
-      st = {
-        status: d.status,
-        created_at: d.created_at,
-        expires_at: d.expires_at,
-        code: d.code,
-        phone: d.phone,
-      };
+      st = { status: d.status, created_at: d.created_at, expires_at: d.expires_at, code: d.code, phone: d.phone };
     }
 
+    // upgrade to ready if creds are registered
     if (st.status !== "ready" && isRegisteredSession(id)) {
-  writeStatus(id, { ...st, status: "ready" });
-  return res.json({ ok: true, ...readStatus(id) });
-                                                     }
+      writeStatus(id, { ...st, status: "ready" });
+      return res.json({ ok: true, ...readStatus(id) });
+    }
 
     return res.json({ ok: true, ...st });
-  } catch (e) {
+  } catch {
     return res.status(500).json({ ok: false, error: "status failed" });
   }
 });
@@ -438,25 +338,16 @@ router.get("/session/:id", async (req, res) => {
   try {
     const id = req.params.id;
 
-    const db = await dbGet(id);
-    if (db && db.zip_base64) {
-      return res.json({ ok: true, session_id: id, zip_base64: db.zip_base64 });
+    const sessPath = path.join(SESS_DIR, id);
+    if (!fs.existsSync(sessPath)) return res.status(404).json({ ok: false, error: "Session not found" });
+
+    // ✅ only allow after registered
+    if (!isRegisteredSession(id)) {
+      return res.status(409).json({ ok: false, error: "Session not ready yet" });
     }
 
-    const sessPath = path.join(SESS_DIR, id);
-    if (!fs.existsSync(sessPath))
-      return res.status(404).json({ ok: false, error: "Session not found" });
-
-    if (!isRegisteredSession(id)) {
-  return res.status(409).json({ ok:false, error:"Session not ready yet" });
-                           }
-
     const zipBuf = await zipFolderToBuffer(sessPath);
-    return res.json({
-      ok: true,
-      session_id: id,
-      zip_base64: zipBuf.toString("base64"),
-    });
+    return res.json({ ok: true, session_id: id, zip_base64: zipBuf.toString("base64") });
   } catch (e) {
     console.error("[api/session]", e);
     return res.status(500).json({ ok: false, error: "Failed to package session" });
