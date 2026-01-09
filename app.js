@@ -8,6 +8,7 @@ const path = require("path");
 require("events").EventEmitter.defaultMaxListeners = 500;
 
 const app = express();
+app.set("trust proxy", 1);   // ← ADD THIS LINE
 const ROOT = process.cwd();
 
 // Native body parsing (faster, cleaner than body-parser)
