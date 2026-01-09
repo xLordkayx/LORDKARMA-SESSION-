@@ -1,284 +1,181 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LORDKARMA • Session Portal</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LORDKARMA • Session Portal</title>
+    <meta property="og:title" content="LORDKARMA Session Portal" />
+    <meta property="og:image" content="https://i.imgur.com/HQ8CENR.jpeg" />
 
-  <meta property="og:image" content="https://i.imgur.com/HQ8CENR.jpeg" />
-  <meta property="og:title" content="LORDKARMA Session Portal" />
-
-  <!-- Optional: better font (won’t break anything if it fails) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700&display=swap" rel="stylesheet">
-
-  <style>
-    :root{
-      --bg: #050507;
-      --card: rgba(255,255,255,.06);
-      --stroke: rgba(255,255,255,.10);
-      --text: rgba(255,255,255,.92);
-      --muted: rgba(255,255,255,.65);
-      --glow1: #7e03aa;
-      --glow2: #00fffb;
-      --glow3: #ffae00;
-    }
-
-    *{ box-sizing: border-box; }
-    html, body { height: 100%; }
-    body{
-      margin: 0;
-      font-family: "Montserrat", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      color: var(--text);
-      background: radial-gradient(1200px 600px at 20% 10%, rgba(126,3,170,.20), transparent 55%),
-                  radial-gradient(900px 500px at 80% 30%, rgba(0,255,251,.12), transparent 60%),
-                  radial-gradient(900px 700px at 50% 90%, rgba(255,174,0,.08), transparent 55%),
-                  var(--bg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 28px 16px 70px; /* bottom space for footer */
-      overflow-x: hidden;
-    }
-
-    /* Subtle animated grain/glow */
-    body::before{
-      content:"";
-      position: fixed;
-      inset: 0;
-      background:
-        radial-gradient(circle at 30% 20%, rgba(126,3,170,.25), transparent 40%),
-        radial-gradient(circle at 70% 35%, rgba(0,255,251,.15), transparent 45%),
-        radial-gradient(circle at 55% 80%, rgba(255,174,0,.10), transparent 45%);
-      filter: blur(30px);
-      opacity: .55;
-      pointer-events: none;
-      animation: floatGlow 9s ease-in-out infinite;
-    }
-    @keyframes floatGlow{
-      0%,100%{ transform: translateY(0px); }
-      50%{ transform: translateY(-12px); }
-    }
-
-    .wrap{
-      width: min(520px, 100%);
-      text-align: center;
-      position: relative;
-      z-index: 1;
-    }
-
-    .card{
-      background: var(--card);
-      border: 1px solid var(--stroke);
-      backdrop-filter: blur(10px);
-      border-radius: 18px;
-      padding: 26px 18px 18px;
-      box-shadow: 0 18px 45px rgba(0,0,0,.55);
-    }
-
-    .brand{
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 14px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.10);
-      background: rgba(0,0,0,.35);
-      color: var(--muted);
-      font-size: 12px;
-      letter-spacing: .18em;
-      text-transform: uppercase;
-      user-select: none;
-      margin-bottom: 12px;
-    }
-
-    h1{
-      margin: 10px 0 8px;
-      font-size: clamp(26px, 4vw, 34px);
-      letter-spacing: .06em;
-      font-weight: 700;
-      line-height: 1.15;
-    }
-
-    .subtitle{
-      margin: 0 0 18px;
-      color: var(--muted);
-      font-weight: 300;
-      font-size: 14px;
-      line-height: 1.6;
-    }
-
-    .titleGlow{
-      background: linear-gradient(90deg, #ffffff, rgba(255,255,255,.8), rgba(255,255,255,.95));
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      text-shadow: 0 0 20px rgba(255,255,255,.08);
-    }
-
-    .deep{
-      margin: 10px auto 18px;
-      max-width: 46ch;
-      color: rgba(255,255,255,.7);
-      font-size: 13px;
-      font-weight: 300;
-      line-height: 1.7;
-    }
-    .deep em{
-      font-style: normal;
-      color: rgba(255,255,255,.9);
-    }
-
-    .grid{
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 10px;
-      margin-top: 16px;
-    }
-
-    .btn{
-      width: 100%;
-      border: 0;
-      cursor: pointer;
-      padding: 12px 14px;
-      border-radius: 14px;
-      background: linear-gradient(0deg, rgba(0,0,0,.65), rgba(39,39,39,.55));
-      color: rgba(255,255,255,.92);
-      font-weight: 700;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      position: relative;
-      box-shadow: 0 10px 25px rgba(0,0,0,.45);
-      transition: transform .15s ease, filter .15s ease, box-shadow .15s ease;
-    }
-    .btn::before{
-      content:"";
-      position: absolute;
-      inset: -2px;
-      border-radius: 16px;
-      background: linear-gradient(45deg,
-        var(--glow3),
-        var(--glow1),
-        var(--glow2),
-        #ff0000,
-        var(--glow3)
-      );
-      background-size: 400%;
-      filter: blur(10px);
-      opacity: .60;
-      z-index: -1;
-      animation: borderFlow 14s linear infinite;
-    }
-    @keyframes borderFlow{
-      0%{ background-position: 0 0; }
-      50%{ background-position: 400% 0; }
-      100%{ background-position: 0 0; }
-    }
-    .btn:hover{
-      transform: translateY(-1px);
-      filter: brightness(1.06);
-      box-shadow: 0 14px 30px rgba(0,0,0,.55);
-    }
-    .btn:active{
-      transform: translateY(1px);
-    }
-
-    .btn small{
-      display: block;
-      margin-top: 4px;
-      font-weight: 300;
-      letter-spacing: .02em;
-      text-transform: none;
-      color: rgba(255,255,255,.68);
-    }
-
-    footer{
-      position: fixed;
-      left: 0;
-      bottom: 0;
-      width: 100%;
-      text-align: center;
-      padding: 12px 10px;
-      background: rgba(0,0,0,.65);
-      border-top: 1px solid rgba(255,255,255,.06);
-      backdrop-filter: blur(10px);
-      color: rgba(255,255,255,.55);
-      font-size: 12px;
-      letter-spacing: .08em;
-      z-index: 2;
-    }
-
-    /* Make two columns on wider screens */
-    @media (min-width: 520px){
-      .grid{
-        grid-template-columns: 1fr 1fr;
+    <style>
+      :root {
+        --bg: #070a10;
+        --panel: rgba(12, 16, 26, 0.72);
+        --panel2: rgba(12, 16, 26, 0.55);
+        --text: #eaf0ff;
+        --muted: #a8b3cf;
+        --accent: #7c5cff;
+        --line: rgba(255, 255, 255, 0.1);
       }
-      .grid .wide{
-        grid-column: span 2;
+      * {
+        box-sizing: border-box;
       }
-    }
-  </style>
-</head>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+        color: var(--text);
+        background:
+          radial-gradient(1200px 800px at 15% 20%, rgba(124, 92, 255, 0.18), transparent 60%),
+          radial-gradient(900px 700px at 85% 80%, rgba(46, 229, 157, 0.10), transparent 55%),
+          linear-gradient(180deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.85)),
+          url("https://i.imgur.com/HQ8CENR.jpeg");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+      }
+      .wrap {
+        width: min(820px, 92vw);
+        padding: 18px;
+      }
+      .card {
+        border: 1px solid var(--line);
+        background: linear-gradient(180deg, var(--panel), var(--panel2));
+        backdrop-filter: blur(10px);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
+      }
+      .top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 14px;
+      }
+      .top h1 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: 0.7px;
+      }
+      .top small {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: rgba(0, 0, 0, 0.25);
+        color: var(--muted);
+        font-size: 12px;
+        user-select: none;
+      }
+      .hero {
+        text-align: center;
+        padding: 10px 6px 2px;
+      }
+      .hero .title {
+        font-size: 44px;
+        line-height: 1.05;
+        margin: 14px 0 8px;
+        letter-spacing: 1px;
+      }
+      .hero .subtitle {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+      }
+      .grid {
+        margin-top: 16px;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+      @media (max-width: 640px) {
+        .hero .title {
+          font-size: 34px;
+        }
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .btn {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1px solid rgba(124, 92, 255, 0.35);
+        background: linear-gradient(180deg, rgba(124, 92, 255, 0.95), rgba(124, 92, 255, 0.65));
+        color: white;
+        font-weight: 800;
+        letter-spacing: 0.4px;
+        cursor: pointer;
+        transition: transform 0.08s ease, filter 0.15s ease;
+      }
+      .btn:active {
+        transform: scale(0.98);
+      }
+      .btn.mute {
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid var(--line);
+        color: var(--text);
+      }
+      .foot {
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+        text-align: center;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      a {
+        color: var(--text);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
 
-<body>
-  <div class="wrap">
-    <div class="card" id="main">
-      <div class="brand">🖤 LORDKARMA • SESSION PORTAL</div>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <div class="top">
+          <div>
+            <h1>🖤 LORDKARMA • Session Portal</h1>
+            <small>Pair fast. Deploy clean. Keep it private.</small>
+          </div>
+          <span class="pill">🔒 password gate • 🧩 session id</span>
+        </div>
 
-      <h1 class="titleGlow">WELCOME TO LORDKARMA SESSION</h1>
+        <div class="hero">
+          <div class="title">WELCOME</div>
+          <p class="subtitle">
+            Generate a <b>Pair Code</b>, link it in WhatsApp, then use the <b>Session ID</b> inside your bot.
+          </p>
+        </div>
 
-      <p class="subtitle">
-        Generate your QR / Pair Code and connect cleanly.
-      </p>
+        <div class="grid">
+          <button class="btn" onclick="location.href='/pair'">PAIR CODE</button>
+          <button class="btn mute" onclick="location.href='/qr'">QR PAGE (optional)</button>
 
-      <p class="deep">
-        <em>“Move in silence.</em> Let the results do the noise.” 🥀
-      </p>
+          <!-- Replace these links with your real ones anytime -->
+          <button class="btn mute" onclick="location.href='https://github.com/'">GITHUB</button>
+          <button class="btn mute" onclick="location.href='https://wa.me/'">OWNER</button>
+        </div>
 
-      <!-- keeping your hidden input (doesn’t break anything) -->
-      <input hidden type="text" name="value" value="lordkarma-md" />
-
-      <div class="grid">
-        <button class="btn" onclick="location.href='/qr'">
-          QR CODE
-          <small>Scan with WhatsApp</small>
-        </button>
-
-        <button class="btn" onclick="location.href='/pair'">
-          PAIR CODE
-          <small>Link using pairing code</small>
-        </button>
-
-        <button class="btn wide" onclick="location.href='https://heroku.com/deploy?template=https://github.com/MrMasterOfc/MASTER-MD'">
-          DEPLOY
-          <small>Deploy template (as provided)</small>
-        </button>
-
-        <button class="btn" onclick="location.href='https://wa.me/+94720797915'">
-          OWNER
-          <small>Direct contact</small>
-        </button>
-
-        <button class="btn" onclick="location.href='https://whatsapp.com/channel/0029VaWWZa1G3R3c4TPADo0M'">
-          WHATSAPP CHANNEL
-          <small>Updates & drops</small>
-        </button>
-
-        <button class="btn" onclick="location.href='https://github.com/MrSahanOfcSL'">
-          GITHUB
-          <small>Repo & source</small>
-        </button>
-
-        <button class="btn wide" onclick="location.href='https://www.youtube.com/@sahanmaduwantha2006'">
-          YOUTUBE
-          <small>Videos & guides</small>
-        </button>
+        <div class="foot">© LORDKARMA WHATSAPP BOT • Session Generator</div>
       </div>
     </div>
-  </div>
-
-  <footer>© LORDKARMA WHATSAPP BOT</footer>
-</body>
+  </body>
 </html>
